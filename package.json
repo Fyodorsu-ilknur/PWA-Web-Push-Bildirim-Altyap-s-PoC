@@ -1,0 +1,27 @@
+{
+  "name": "guvenli-kampus-poc",
+  "version": "1.0.0",
+  "description": "PWA Web Push Notification & Add to Home Screen Proof of Concept (PoC)",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "generate-keys": "node generate-keys.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "web-push": "^3.6.7"
+  },
+  "keywords": [
+    "pwa",
+    "web-push",
+    "vapid",
+    "service-worker",
+    "add-to-home-screen"
+  ],
+  "author": "Guvenli Kampus Team",
+  "license": "MIT"
+}

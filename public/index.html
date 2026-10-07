@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Güvenli Kampüs PoC - PWA Web Push Notification</title>
+  
+  <!-- PWA & Mobile Configuration -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <!-- iOS Safari Web App meta tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Güvenli Kampüs">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="/icons/icon.svg" alt="Kampüs Logo">
+        </div>
+        <div class="brand-text">
+          <h1>Güvenli Kampüs <span class="badge-poc">PoC</span></h1>
+          <p>PWA & Web Push Bildirim Altyapısı</p>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="/admin" class="nav-btn">
+          <span>⚙️ Yönetici Paneli</span>
+        </a>
+      </nav>
+    </header>
+
+    <!-- Android / Chromium Install Banner (Shown when beforeinstallprompt fires) -->
+    <div id="installBanner" class="card install-banner" style="display: none;">
+      <div class="install-content">
+        <div class="install-info">
+          <h3>📱 Uygulamayı Yükle</h3>
+          <p>Ana ekranınıza ekleyerek anlık acil durum bildirimlerini tam ekran deneyimle alın.</p>
+        </div>
+        <button id="btnInstall" class="btn btn-primary" style="white-space: nowrap;">
+          ➕ Yükle
+        </button>
+      </div>
+    </div>
+
+    <!-- Status Overview Card -->
+    <section class="card">
+      <div class="card-title">
+        <span class="icon-title">📊 Sistem & Cihaz Durumu</span>
+      </div>
+      <p class="card-desc">Cihazınızın Web Push ve PWA uyumluluk durumu gerçek zamanlı olarak izlenmektedir.</p>
+
+      <div class="status-grid">
+        <div class="status-item">
+          <div class="status-label">Bildirim İzin Durumu</div>
+          <div class="status-value">
+            <span id="statusDot" class="status-dot"></span>
+            <span id="notificationStatus">Kontrol Ediliyor...</span>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-label">Çalışma Modu</div>
+          <div class="status-value">
+            <span id="modeDot" class="status-dot"></span>
+            <span id="detectedMode">Tespit ediliyor...</span>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-label">Tespit Edilen Platform</div>
+          <div class="status-value">
+            <span id="detectedPlatform">-</span>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-label">Service Worker Motoru</div>
+          <div class="status-value">
+            <span class="status-dot active"></span>
+            <span>VAPID Web Push Hazır</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="btn-group">
+        <button id="btnSubscribe" class="btn btn-primary btn-full">
+          🔔 Bildirimlere İzin Ver ve Abone Ol
+        </button>
+        <button id="btnTestSelf" class="btn btn-success" style="display: none;">
+          ⚡ Kendime Test Bildirimi At
+        </button>
+        <button id="btnUnsubscribe" class="btn btn-danger" style="display: none;">
+          Aboneliği Sonlandır
+        </button>
+      </div>
+    </section>
+
+    <!-- iOS Special Notice Box (shown for Safari users) -->
+    <div id="iosInstallGuide" class="guide-box" style="display: none;">
+      <h4>🍏 Apple iOS (iPhone/iPad) Bildirim Rehberi</h4>
+      <p style="margin-bottom: 0.75rem; color: #cbd5e1;">
+        Apple iOS 16.4+ kuralları gereği, Web Push bildirimleri <strong>yalnızca ana ekrana eklenen PWA uygulamalarında</strong> çalışır:
+      </p>
+      <ol class="guide-steps">
+        <li>Safari tarayıcınızın altındaki <strong>Paylaş</strong> (kare içinden yukarı ok) simgesine dokunun.</li>
+        <li>Açılan menüde aşağı kaydırıp <strong>"Ana Ekrana Ekle" (Add to Home Screen)</strong> seçeneğini seçin.</li>
+        <li>Sağ üstteki <strong>Ekle</strong> butonuna basıp uygulamayı ana ekranınıza sabitleyin.</li>
+        <li>Ana ekranınızdaki <strong>"Güvenli Kampüs"</strong> simgesine dokunarak açın ve bu sayfadaki <strong>"Bildirimlere İzin Ver"</strong> butonuna tıklayın.</li>
+      </ol>
+    </div>
+
+    <!-- Active Subscription Details Card -->
+    <section id="subDetails" class="card" style="display: none;">
+      <div class="card-title">
+        <span class="icon-title">🔐 Aktif Cihaz Anahtarı</span>
+      </div>
+      <p class="card-desc">Cihazınız güvenli VAPID çiftiyle sunucuya kaydedildi. Bu cihaza özel gönderimler yapılabilir.</p>
+      <div style="background: rgba(0,0,0,0.4); padding: 0.85rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Cihaz Push Endpoint (Şifrelenmiş):</div>
+        <div id="subEndpointMasked" style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--primary); word-break: break-all;">-</div>
+      </div>
+    </section>
+
+    <!-- Quick Info Feature Cards -->
+    <section class="card">
+      <div class="card-title">
+        <span class="icon-title">✨ Bu PoC Neleri Kanıtlıyor?</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+        <div>✔️ <strong>Arka Planda Çalışma:</strong> Uygulama ve tarayıcı tamamen kapalıyken dahi OS düzeyinde bildirim ekranı tetiklenir.</div>
+        <div>✔️ <strong>Kullanıcı Etkileşimi:</strong> Bildirime tıklandığında ilgili kampüs duyurusu veya URL doğrudan tam ekranda açılır.</div>
+        <div>✔️ <strong>Maliyet ve Mağaza Bağımsızlığı:</strong> Apple App Store veya Google Play Store'a komisyon veya hesap ücreti ödemeden native hissi veren anlık iletişim sağlar.</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yönetim & Bildirim Tetikleme Paneli - Güvenli Kampüs PoC</title>
+  
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <div class="container container-wide">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="/icons/icon.svg" alt="Kampüs Logo">
+        </div>
+        <div class="brand-text">
+          <h1>Yönetim & Bildirim Merkezi</h1>
+          <p>Web Push VAPID Dispatch Console</p>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="/" class="nav-btn">
+          <span>📱 Kullanıcı Görünümü</span>
+        </a>
+      </nav>
+    </header>
+
+    <!-- Main Grid -->
+    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.25rem;">
+      
+      <!-- Left Column: Notification Dispatch Form -->
+      <div>
+        <section class="card">
+          <div class="card-title">
+            <span class="icon-title">🚀 Test Bildirimi Gönder</span>
+          </div>
+          <p class="card-desc">
+            Buradan oluşturacağınız bildirim, Service Worker ve Push Service (FCM/Apple Push) üzerinden kayıtlı cihazlara anında iletilir.
+          </p>
+
+          <!-- Quick Presets -->
+          <div class="form-group">
+            <label class="form-label">Hızlı Test Şablonları:</label>
+            <div class="preset-chips">
+              <span class="chip" data-preset="security">🚨 Acil Güvenlik Uyarısı</span>
+              <span class="chip" data-preset="class">📚 Ders İptal Duyurusu</span>
+              <span class="chip" data-preset="shuttle">🚌 Ring Servis Bilgisi</span>
+            </div>
+          </div>
+
+          <form id="notificationForm">
+            <div class="form-group">
+              <label class="form-label" for="targetSelect">Hedef Cihaz(lar):</label>
+              <select id="targetSelect" class="form-select">
+                <option value="all">📢 Tüm Kayıtlı Cihazlar (Genel Yayın - Broadcast)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="notifTitle">Bildirim Başlığı (Title):</label>
+              <input type="text" id="notifTitle" class="form-input" 
+                     placeholder="Örn: 🚨 Kampüs Tahliye Tatbikatı" 
+                     value="🛡️ Güvenli Kampüs PoC Duyurusu" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="notifBody">Mesaj Metni (Body):</label>
+              <textarea id="notifBody" class="form-textarea" 
+                        placeholder="Örn: Saat 14:00'te tüm binalarda eşzamanlı tatbikat yapılacaktır..." required>Web Push bildirimi tarayıcı ve uygulama kapalıyken başarıyla teslim edildi!</textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="notifUrl">Tıklanınca Açılacak URL (Target URL):</label>
+              <input type="text" id="notifUrl" class="form-input" 
+                     placeholder="Örn: / veya https://kampus.edu.tr/duyuru" 
+                     value="/?ref=push_notif">
+            </div>
+
+            <button type="submit" id="btnSendNotification" class="btn btn-primary btn-full" style="margin-top: 0.5rem;">
+              🚀 Bildirimi Gönder
+            </button>
+          </form>
+        </section>
+
+        <!-- Live Console Logs -->
+        <section class="card">
+          <div class="card-title">
+            <span class="icon-title">🖥️ Canlı Gönderim Terminali</span>
+          </div>
+          <p class="card-desc">Sunucudan Web Push servisine yapılan HTTP çağrılarının log kayıtları.</p>
+          <div id="adminConsole" class="console-box">
+            <div><span class="log-time">[Başlatıldı]</span> Sistem dinleme modunda. Abone cihazlar bekleniyor...</div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Column: Subscribers List -->
+      <div>
+        <section class="card">
+          <div class="card-title">
+            <span class="icon-title">📱 Kayıtlı Cihazlar (<span id="subscriberCount" style="color: var(--primary);">0</span>)</span>
+            <button id="btnRefreshSubscribers" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">
+              🔄 Yenile
+            </button>
+          </div>
+          <p class="card-desc">
+            VAPID ortak anahtarı ile şifrelenmiş ve push servisine kayıt olmuş aktif istemciler.
+          </p>
+
+          <div style="overflow-x: auto;">
+            <table class="subscriber-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Cihaz / Tür</th>
+                  <th>Endpoint</th>
+                  <th>Kayıt</th>
+                </tr>
+              </thead>
+              <tbody id="subscriberTableBody">
+                <tr>
+                  <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                    Yükleniyor...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Technical VAPID & Architecture Notes -->
+        <section class="card">
+          <div class="card-title">
+            <span class="icon-title">⚙️ Web Push Mimarisi</span>
+          </div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.6;">
+            <p style="margin-bottom: 0.5rem;">
+              1. <strong>İstemci</strong> VAPID Public Key ile tarayıcının yerel <code>PushManager</code> servisine abone olur.
+            </p>
+            <p style="margin-bottom: 0.5rem;">
+              2. Üretilen benzersiz <strong>Endpoint & Cryptographic Keys (p256dh, auth)</strong> sunucumuza iletilir.
+            </p>
+            <p style="margin-bottom: 0.5rem;">
+              3. Sunucu <code>web-push</code> kütüphanesiyle VAPID Private Key kullanarak şifreli JWT imzalar ve Google FCM / Apple APNs push sunucularına gönderir.
+            </p>
+            <p>
+              4. İstemci cihaz internete bağlı olduğu anda işletim sistemi düzeyinde Service Worker uyandırılır ve bildirim ekrana yansıtılır.
+            </p>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/js/admin.js"></script>
+</body>
+</html>
